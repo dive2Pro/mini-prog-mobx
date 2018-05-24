@@ -1,0 +1,27 @@
+
+.main{
+    height: calc(100vh - 150rpx);
+    display: flex;
+}
+
+.main > view {
+    height: 100%;
+    overflow: auto;
+}
+
+.left-tree{
+    height: 100%;
+    width: 20%;
+}
+
+.left-tree view{
+    height: 150rpx;
+}
+.right-tree {
+    flex:1;
+}
+
+.right-tree image{
+    height: 150rpx;
+    width: 150rpx;
+}

@@ -1,0 +1,4 @@
+<!--components/HrefImage/HrefImage.wxml-->
+<navigator class="{{clazz}}" url="{{href}}" redirect hover-class="className">
+    <image src="{{src}}" />
+</navigator>

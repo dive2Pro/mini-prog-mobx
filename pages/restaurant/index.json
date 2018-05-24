@@ -1,0 +1,5 @@
+{
+    "usingComponents": {
+        "shop-cart-operator": "/components/Shopcart/Operator/index"
+      }
+}

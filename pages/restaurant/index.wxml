@@ -1,0 +1,23 @@
+<!--pages/restaurant/index.wxml-->
+<view>
+    <view class="main">
+        <view class="left-tree">
+            <view wx:for="{{clazzs}}" wx:key="{{item.id}}" bindtap="handleLeftTreeClick"
+                    data-index="{{index}}"
+            >
+                <text>{{item.name}}</text>
+            </view>
+        </view>
+        <view class="right-tree">
+            <view wx:for="{{selected.foods}}" wx:key="{{item.id}}">
+                <view>
+                 <image src="{{item.image_path}}" />   
+                 <text>{{item.name}} </text>
+                </view>
+                <view>
+                  <shop-cart-operator rId="{{shop.id}}" food="{{item}}"/>
+                </view>
+            </view>
+        </view>
+    </view>
+</view>
