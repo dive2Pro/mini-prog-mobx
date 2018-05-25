@@ -26,7 +26,7 @@ Page(
         success: function(res) {
           wx.hideLoading();
           const changed = self.appendBaseUrl(res.data);
-          self.setData({ shops: changed });
+          self.innerSetData({ shops: changed });
         },
       });
     },
@@ -38,7 +38,7 @@ Page(
     },
     getUserInfo: function(e) {
       globalData.userInfo = e.detail.userInfo;
-      this.setData({
+      this.innerSetData({
         userInfo: e.detail.userInfo,
         hasUserInfo: true,
       });
@@ -60,6 +60,13 @@ Page(
       temp2() {
 
       },
+    },
+    watch: {
+      tempChange() {
+        this.innerSetData({
+          tempChange: this.data.temp + " ---> "
+        })
+      }
     }
   }),
   
