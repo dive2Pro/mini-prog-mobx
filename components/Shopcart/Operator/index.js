@@ -1,5 +1,3 @@
-// components/Shopcart/Operator/index.js
-// import * as mobx from '../../../libs/mobx'
 import shopCart from '../store';
 
 const { mobx } = getApp().globalData;
