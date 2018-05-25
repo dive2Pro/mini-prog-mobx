@@ -1,4 +1,5 @@
 import * as mobx from './mobx';
+import shopStore from '../components/Shopcart/store'
 
 export function Observe(pageOrComponent) {
   /**
@@ -9,18 +10,28 @@ export function Observe(pageOrComponent) {
    * 劫持data属性,
    * 如果是 Component , 还要劫持 properties
    *
-   * 劫持 data 属性:
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   *
    *
    * -----------------------------------------------------------------------------------------------
-   *
+   * 
+   * 
+   * ===============================  响应 Store 的改变 ==============================================
+   * 
+   * 小程序对 page 或者 component 只会对 data 中存在对 值进行读取.
+   * 
+   * 使用方式: 
+   *         ```html
+   *                <text> {{shopStore.counts}} </text>
+   *         ```  
+   * 
+   * 当 store 中有值改变时, 需要告知 page 或者 component 对和它对应的 wxml 进行渲染, 这一步是通过 setData 来做的.
+   * 
+   * Requirement:
+   *    1. 使用时, store 是在 data 中的, 这才可以在 wxml 中进行取值操作 
+   *    2. 在 wxml 中使用了哪些 store 的值
+   *       - wxml 中 不能精确知道的是哪一项发生了改变, 所以需要对整个 store 进行观察 
+   *       - 传递给 wxml 的已经不是 reaction 的对象了, 不能监听来探知是哪个属性被使用
+   *        
+   * ================================================================================================
    *
    * onLoad 和 onUnload 作为监听解除
    *
@@ -39,10 +50,12 @@ export function Observe(pageOrComponent) {
       configurable: true,
       enumerable: true,
       get() {
+          // console.log(atom, ' I am get called')
         atom.reportObserved();
         return valueHolder;
       },
       set(v) {
+          // console.log(`set ${v}`)
         if (!shallowEqual(valueHolder, v)) {
           valueHolder = v;
           atom.reportChanged();
@@ -75,9 +88,8 @@ export function Observe(pageOrComponent) {
     const self = this;
     const watch = self.watch || {};
     Object.values(watch).forEach(fn => {
-      fn = fn.bind(self);
       mobx.autorun(() => {
-        fn();
+        fn.call(self);
       });
     });
   }
@@ -99,15 +111,25 @@ export function Observe(pageOrComponent) {
     extendComputed.call(this);
     extendWatch.call(this);
     originOnLoad.apply(this, args);
+    mobx.spy((event) => {
+      if (event.type === "update" && event.name === shopStore.$mobx.name ) {
+        console.log(event)
+      }
+    })
+    console.log(shopStore)
+    setTimeout(() => {
+      shopStore.currentRId = "1"
+    }, 2000)
   }
   const originSetData = pageOrComponent.setData;
   pageOrComponent.onLoad = onLoad;
-  
+
   function innerSetData(obj) {
     const self = this;
     const { data } = self;
     Object.keys(obj).forEach(key => {
-      if (!data.hasOwnProperty(key) || mobx.isObservableObject(data[key])) {
+      if (!data.hasOwnProperty(key)) {
+        // console.log( key, data[key],  data.hasOwnProperty(key) , mobx.isObservableObject(data[key]))
         makePropertyObservableReference.call(self, key);
       }
     });

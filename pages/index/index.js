@@ -55,11 +55,9 @@ Page(
     },
     computed: {
       temp: function() {
+        console.log(this.data.shops)
         return this.data.shops.length + ' 个'
-      },
-      temp2() {
-
-      },
+      }
     },
     watch: {
       tempChange() {

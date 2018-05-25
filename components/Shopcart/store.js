@@ -1,26 +1,28 @@
 import * as mobx from '../../libs/mobx';
 
+
+const {decorate, observable, computed} = mobx
+
 const defaultOptions = {
   initial: () => ({}),
   afterUpdate: () => {},
 };
 
 
-class ShopCart {
+class ShopCart {    
+    
   constructor(options = defaultOptions) {
     this.options = options;
-    mobx.extendObservable(this, {
-        db: options.initial(),
-        currentRId: null,
-        get restaurant(){
-            if(this.currentRId) {
-                return this.db[this.currentRId]
-            }
-            return {}
-        }
-    })
+    this.db = options.initial()
+    this.currentRId = null
   }
 
+  get restaurant(){
+    if(this.currentRId) {
+        return this.db[this.currentRId]
+    }
+    return {}
+}
   setCurrentRId = (rId) => {
       this.currentRId = rId;
       this.prePareRestaurant(rId);
@@ -84,7 +86,11 @@ function getSingle(clazz) {
     return instance;
   };
 }
-
+decorate(ShopCart, {
+    db: observable,
+    currentRId: observable,
+    restaurant: computed
+})
 const shopCart = new ShopCart();
 
 shopCart.init({});
