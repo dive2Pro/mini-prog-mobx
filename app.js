@@ -1,6 +1,6 @@
 //app.js
 import * as mobx from './libs/mobx'
-import setStores from './libs/Observe'
+import setStores, {Observe} from './libs/Observe'
 import shopStore from './components/Shopcart/store'
 App({
   onLaunch: function () {
@@ -43,6 +43,7 @@ App({
     userInfo: null,
     baseURL: 'http://cangdu.org:8001/',
     IMAGE_PREFIX: '//elm.cangdu.org/img/',
-    mobx
+    mobx,
+    Observe
   }
 })

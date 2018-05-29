@@ -1,7 +1,6 @@
-import { Observe } from '../../libs/Observe';
 const shoppingURL = 'shopping/restaurants?latitude=31.22967&longitude=121.4762';
-
 const { globalData } = getApp();
+const Observe = globalData.Observe
 Page(
   Observe({
     data: {
@@ -67,7 +66,6 @@ Page(
           return state.currentRId
         }
       },
-
     },
     watch: {
       tempChange() {

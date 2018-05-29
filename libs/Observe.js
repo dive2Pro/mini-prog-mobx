@@ -2,6 +2,8 @@ import * as mobx from './mobx';
 import shopStore from '../components/Shopcart/store'
 
 let globalStores;
+const listeners = {}
+
 /**
  * 
  * @param {PageOrComponent} pageOrComponent 
@@ -9,6 +11,21 @@ let globalStores;
  * @return Object
  */
 export function Observe(pageOrComponent, ...stores) {
+  listeners[pageOrComponent] = []
+  function makeAutorun(fn){
+    const unAutorun = mobx.autorun(fn)
+    const ls = listeners[pageOrComponent]
+    if(ls) {
+      ls.push(unAutorun)
+    }
+  }
+  function clearListeners() {
+    if(ls) {
+      while(ls.length) {
+        (ls.pop())()
+      }
+    }
+  }
   /**
    * 要使 Ui 更新, 必须通过 this.setData 来更新数据
    * 所以 mobx 中的 Observable 对象的改变, 需要调用该方法
@@ -50,11 +67,24 @@ export function Observe(pageOrComponent, ...stores) {
 
   const originOnLoad = pageOrComponent.onLoad;
   const originComputed = pageOrComponent.computed || {};
+  const originOnUnload = pageOrComponent.OnUnload;
+  const originOnAttached = pageOrComponent.attached
+  const originOnDetached = pageOrComponent.detached
 
-  function makePropertyObservableReference(propName) {
-    let valueHolder = this.data[propName];
+  function onDetached () {
+    clearListeners.call(this)
+    originOnDetached && originOnDetached.call(this)
+  }
+  
+  function onUnload() {
+    clearListeners.call(this)
+    originOnUnload && originOnUnload.call(this)
+  }
+
+  function makePropertyObservableReference(field , propName) {
+    let valueHolder = this[field][propName];
     const atom = mobx.createAtom('reactive ' + propName);
-    Object.defineProperty(this.data, propName, {
+    Object.defineProperty(this[field], propName, {
       configurable: true,
       enumerable: true,
       get() {
@@ -84,7 +114,10 @@ export function Observe(pageOrComponent, ...stores) {
     Object.entries(originComputed).filter(([name]) => {
       return stores.indexOf(name) < 0
     }).forEach(([name, fn]) => {
-      mobx.autorun(() => {
+      if(typeof fn !== 'function') {
+        return;
+      }
+      makeAutorun(() => {
         const newValue = fn.apply(self);
         if (newValue) {
           self.innerSetData({
@@ -107,17 +140,17 @@ export function Observe(pageOrComponent, ...stores) {
         const typeOf = typeof body
         switch (typeOf) {
           case 'string':
-            mobx.autorun(() => {
+            makeAutorun(() => {
               const returned = aliasStore[body]
-              self.innerSetData({
+              self.setData({
                 [field]: returned
               })
             })
             break
           case 'function':
-            mobx.autorun(() => {
+            makeAutorun(() => {
               const returned = body.call(self, aliasStore)
-              self.innerSetData({
+              self.setData({
                 [field]: returned
               })
             })
@@ -131,7 +164,7 @@ export function Observe(pageOrComponent, ...stores) {
     const self = this;
     const watch = self.watch || {};
     Object.values(watch).forEach(fn => {
-      mobx.autorun(() => {
+      makeAutorun(() => {
         fn.call(self);
       });
     });
@@ -139,6 +172,7 @@ export function Observe(pageOrComponent, ...stores) {
 
   function extendStore() {
     const self = this
+    // console.log(globalStores)
     if (globalStores && stores && stores.length) {
       stores.forEach(name => {
         if (globalStores[name]) {
@@ -147,7 +181,20 @@ export function Observe(pageOrComponent, ...stores) {
       })
     }
   }
-
+  function extendProperties() {
+    if(this.properties) {
+    const keys = Object.keys(this.properties)
+      keys.forEach( key => {
+        makePropertyObservableReference.call(this, 'properties', key)
+      })
+    }
+  }
+  function extendToObserve() {
+    const self = this
+    extendStore.call(self)
+    extendComputed.call(self);
+    extendWatch.call(self);
+  }
   function onLoad(...args) {
     /**
      * 在这里观测 store , 检查 data 或者 props 中是否有值在 store 中可以取得
@@ -162,12 +209,10 @@ export function Observe(pageOrComponent, ...stores) {
      */
     const self = this
     Object.keys(this.data).forEach(key => {
-      makePropertyObservableReference.call(this, key);
+      makePropertyObservableReference.call(this, 'data' ,key);
     });
-    extendStore.call(this)
-    extendComputed.call(this);
-    extendWatch.call(this);
-    originOnLoad.apply(this, args);
+    extendToObserve.call(self)
+    originOnLoad.apply(self, args);
     mobx.spy((event) => {
       if (event.type === "update" && event.name === shopStore.$mobx.name) {
         // self.setData({ [event.key]: event.newValue})
@@ -177,9 +222,15 @@ export function Observe(pageOrComponent, ...stores) {
       shopStore.currentRId = "1"
     }, 2000)
   }
+  function attached(...args) {
+    const self = this
+    extendProperties.call(self)
+    extendToObserve.call(self)
+    originOnAttached.apply(self, args)
+  }
   const originSetData = pageOrComponent.setData;
   pageOrComponent.onLoad = onLoad;
-
+  pageOrComponent.attached = attached
   function innerSetData(obj) {
     const self = this;
     const {
@@ -187,14 +238,13 @@ export function Observe(pageOrComponent, ...stores) {
     } = self;
     Object.keys(obj).forEach(key => {
       if (!data.hasOwnProperty(key)) {
-        // console.log( key, data[key],  data.hasOwnProperty(key) , mobx.isObservableObject(data[key]))
-        makePropertyObservableReference.call(self, key);
+        makePropertyObservableReference.call(self, 'data', key);
       }
     });
     self.setData(obj)
   }
   pageOrComponent.innerSetData = innerSetData;
-
+  pageOrComponent.onUnload = onUnload;
   return pageOrComponent;
 }
 
