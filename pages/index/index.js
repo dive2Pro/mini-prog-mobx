@@ -13,6 +13,7 @@ Page(
       });
     },
     onLoad: function() {
+      console.log(this)
       this.requestMore();
     },
     requestMore() {

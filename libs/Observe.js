@@ -2,6 +2,11 @@ import * as mobx from './mobx';
 import shopStore from '../components/Shopcart/store'
 
 let globalStores;
+
+function noop() {
+
+}
+
 const listeners = {}
 
 /**
@@ -12,14 +17,17 @@ const listeners = {}
  */
 export function Observe(pageOrComponent, ...stores) {
   listeners[pageOrComponent] = []
-  function makeAutorun(fn){
+  function makeAutorun(id, fn){
     const unAutorun = mobx.autorun(fn)
-    const ls = listeners[pageOrComponent]
+    const ls = ( listeners[id] = listeners[id] || [])
     if(ls) {
       ls.push(unAutorun)
     }
   }
   function clearListeners() {
+    const self = this 
+    const { __wxExparserNodeId__ : ID } = self
+    const ls = listeners[ID]
     if(ls) {
       while(ls.length) {
         (ls.pop())()
@@ -65,20 +73,20 @@ export function Observe(pageOrComponent, ...stores) {
    *
    */
 
-  const originOnLoad = pageOrComponent.onLoad;
+  const originOnLoad = pageOrComponent.onLoad || noop;
   const originComputed = pageOrComponent.computed || {};
-  const originOnUnload = pageOrComponent.OnUnload;
-  const originOnAttached = pageOrComponent.attached
-  const originOnDetached = pageOrComponent.detached
+  const originOnUnload = pageOrComponent.OnUnload || noop;
+  const originOnAttached = pageOrComponent.attached || noop
+  const originOnDetached = pageOrComponent.detached || noop
 
   function onDetached () {
     clearListeners.call(this)
-    originOnDetached && originOnDetached.call(this)
+    originOnDetached.call(this)
   }
   
   function onUnload() {
     clearListeners.call(this)
-    originOnUnload && originOnUnload.call(this)
+    originOnUnload.call(this)
   }
 
   function makePropertyObservableReference(field , propName) {
@@ -111,13 +119,14 @@ export function Observe(pageOrComponent, ...stores) {
   function extendComputed() {
     const self = this;
     const storeFields = ""
+    const { __wxExparserNodeId__ : ID } = self
     Object.entries(originComputed).filter(([name]) => {
       return stores.indexOf(name) < 0
     }).forEach(([name, fn]) => {
       if(typeof fn !== 'function') {
         return;
       }
-      makeAutorun(() => {
+      makeAutorun( ID, () => {
         const newValue = fn.apply(self);
         if (newValue) {
           self.innerSetData({
@@ -140,7 +149,7 @@ export function Observe(pageOrComponent, ...stores) {
         const typeOf = typeof body
         switch (typeOf) {
           case 'string':
-            makeAutorun(() => {
+            makeAutorun(ID,() => {
               const returned = aliasStore[body]
               self.setData({
                 [field]: returned
@@ -148,7 +157,7 @@ export function Observe(pageOrComponent, ...stores) {
             })
             break
           case 'function':
-            makeAutorun(() => {
+            makeAutorun(ID, () => {
               const returned = body.call(self, aliasStore)
               self.setData({
                 [field]: returned
@@ -163,8 +172,9 @@ export function Observe(pageOrComponent, ...stores) {
   function extendWatch() {
     const self = this;
     const watch = self.watch || {};
+    const { __wxExparserNodeId__ : ID } = self
     Object.values(watch).forEach(fn => {
-      makeAutorun(() => {
+      makeAutorun(ID,() => {
         fn.call(self);
       });
     });
@@ -181,6 +191,7 @@ export function Observe(pageOrComponent, ...stores) {
       })
     }
   }
+
   function extendProperties() {
     if(this.properties) {
     const keys = Object.keys(this.properties)
@@ -228,7 +239,7 @@ export function Observe(pageOrComponent, ...stores) {
     self.innerSetData = innerSetData;
     extendProperties.call(self)
     extendToObserve.call(self)
-    originOnAttached && originOnAttached.apply(self, args)
+    originOnAttached.apply(self, args)
   }
   
   const originSetData = pageOrComponent.setData;

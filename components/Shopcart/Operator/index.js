@@ -32,7 +32,8 @@ Component(
     data: {
       count: 0,
     },
-
+    attached() {
+    },
     /**
      * 组件的方法列表
      */
