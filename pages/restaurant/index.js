@@ -17,16 +17,16 @@ Page({
   onLoad: function(options) {
     const self = this
     self.options = options;
-    const shop = JSON.parse(options.shop);
+    const  { id }  = options
     self.setData({
-      shop,
+      id
     });
 
     wx.request({
-      url: globalData.baseURL + `shopping/v2/menu?restaurant_id=${shop.id}`,
+      url: globalData.baseURL + `shopping/v2/menu?restaurant_id=${id}`,
       success(res) {
         const { data } = res
-        shopCart.setCurrentRId(shop.id)
+        shopCart.setCurrentRId(id)
         self.setData({
           clazzs: data,
         })

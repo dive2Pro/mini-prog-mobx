@@ -24,13 +24,30 @@
 			"current": -1,
 			"list": []
 		},
+		"plugin": {
+			"current": -1,
+			"list": []
+		},
 		"game": {
 			"currentL": -1,
 			"list": []
 		},
 		"miniprogram": {
 			"current": -1,
-			"list": []
+			"list": [
+				{
+					"id": 0,
+					"name": "res",
+					"pathName": "pages/restaurant/index",
+					"query": "id=1",
+					"scene": "1044",
+					"shareInfo": {
+						"groupName": "测试模拟群1",
+						"shareName": "YDA-Ub1Y_FCoVmaG0-4hgtWqWfsxMKm00HJ1rdF3_lI@cr4dev",
+						"shareKey": "Tv86HiqqLTG589Fnk0PCJF568XZE7C-wG8iO8KdNDsG2MhvcU8UcmYcV-wzn8Uq_Ve9O5SaWOpVV26DA6hhVIQ~~"
+					}
+				}
+			]
 		}
 	}
 }

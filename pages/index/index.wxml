@@ -2,6 +2,8 @@
 <view class="container">
   <text>{{temp}} </text>
   <text>{{tempChange}} </text>
+  <text>---- {{rId}}</text>
+  <text> two ---- {{rId2}}</text>
   <view bindtap="shopDirect" wx:for="{{shops}}" wx:for-item="shop" wx:key="{{shop.id}}" data-shop="{{shop}}">
       <image class="shop-avatar" src="{{shop.image_path}}" />
       <text>{{shop.name}}</text>

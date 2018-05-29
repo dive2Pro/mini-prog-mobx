@@ -1,5 +1,7 @@
 //app.js
 import * as mobx from './libs/mobx'
+import setStores from './libs/Observe'
+import shopStore from './components/Shopcart/store'
 App({
   onLaunch: function () {
     // 展示本地存储能力
@@ -7,6 +9,9 @@ App({
     logs.unshift(Date.now())
     wx.setStorageSync('logs', logs)
 
+    //
+    setStores({shopStore})
+    
     // 登录
     wx.login({
       success: res => {

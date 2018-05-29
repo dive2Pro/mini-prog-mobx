@@ -48,7 +48,7 @@ Page(
         dataset: { shop },
       },
     }) {
-      const url = `../restaurant/index?shop=${JSON.stringify(shop)}`;
+      const url = `../restaurant/index?id=${shop.id}`;
       wx.navigateTo({
         url,
       });
@@ -57,7 +57,17 @@ Page(
       temp: function() {
         console.log(this.data.shops)
         return this.data.shops.length + ' 个'
-      }
+      },
+      currentRId() {
+        return this.$shopStore.currentRId
+      },
+      shopStore: {
+        "rId": "currentRId",
+        rId2(state) {
+          return state.currentRId
+        }
+      },
+
     },
     watch: {
       tempChange() {
@@ -66,6 +76,7 @@ Page(
         })
       }
     }
-  }),
-  
+  },
+  "shopStore"
+),
 );

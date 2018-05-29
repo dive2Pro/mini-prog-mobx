@@ -1,7 +1,14 @@
 import * as mobx from './mobx';
 import shopStore from '../components/Shopcart/store'
 
-export function Observe(pageOrComponent) {
+let globalStores;
+/**
+ * 
+ * @param {PageOrComponent} pageOrComponent 
+ * @param {stores} stores 
+ * @return Object
+ */
+export function Observe(pageOrComponent, ...stores) {
   /**
    * 要使 Ui 更新, 必须通过 this.setData 来更新数据
    * 所以 mobx 中的 Observable 对象的改变, 需要调用该方法
@@ -43,6 +50,7 @@ export function Observe(pageOrComponent) {
 
   const originOnLoad = pageOrComponent.onLoad;
   const originComputed = pageOrComponent.computed || {};
+
   function makePropertyObservableReference(propName) {
     let valueHolder = this.data[propName];
     const atom = mobx.createAtom('reactive ' + propName);
@@ -50,12 +58,10 @@ export function Observe(pageOrComponent) {
       configurable: true,
       enumerable: true,
       get() {
-          // console.log(atom, ' I am get called')
         atom.reportObserved();
         return valueHolder;
       },
       set(v) {
-          // console.log(`set ${v}`)
         if (!shallowEqual(valueHolder, v)) {
           valueHolder = v;
           atom.reportChanged();
@@ -67,21 +73,58 @@ export function Observe(pageOrComponent) {
   }
   /**
    * 检查是否有 compute 属性, 如果是 function , 将其的 函数名作为 key 值 放入 data 中, 并将其用 autorun 扩展 + setData
-   *
-   *
-   *
-   *
+   * 
+   * 检查,检查是否有 store名字的属性, 如果有, 则检查该属性的值的类型
+   *  1. 对象, { name: "sm" }
+   *  2. function
    */
   function extendComputed() {
     const self = this;
-    Object.entries(originComputed).forEach(([name, fn]) => {
+    const storeFields = ""
+    Object.entries(originComputed).filter(([name]) => {
+      return stores.indexOf(name) < 0
+    }).forEach(([name, fn]) => {
       mobx.autorun(() => {
         const newValue = fn.apply(self);
         if (newValue) {
-          self.innerSetData({ [name]: newValue });
+          self.innerSetData({
+            [name]: newValue
+          });
         }
       });
     });
+    stores.forEach(name => {
+      const storeField = originComputed[name]
+      if (!storeField) {
+        return
+      }
+      const aliasStore = globalStores[name]
+      if (!aliasStore) {
+        throw new Error(`没有注册${name} store, 请检查 setStores 方法, 确认参数正确`)
+      }
+      Object.keys(storeField).forEach(field => {
+        const body = storeField[field]
+        const typeOf = typeof body
+        switch (typeOf) {
+          case 'string':
+            mobx.autorun(() => {
+              const returned = aliasStore[body]
+              self.innerSetData({
+                [field]: returned
+              })
+            })
+            break
+          case 'function':
+            mobx.autorun(() => {
+              const returned = body.call(self, aliasStore)
+              self.innerSetData({
+                [field]: returned
+              })
+            })
+            break
+        }
+      })
+    })
   }
 
   function extendWatch() {
@@ -93,6 +136,18 @@ export function Observe(pageOrComponent) {
       });
     });
   }
+
+  function extendStore() {
+    const self = this
+    if (globalStores && stores && stores.length) {
+      stores.forEach(name => {
+        if (globalStores[name]) {
+          self[`$${name}`] = globalStores[name]
+        }
+      })
+    }
+  }
+
   function onLoad(...args) {
     /**
      * 在这里观测 store , 检查 data 或者 props 中是否有值在 store 中可以取得
@@ -105,18 +160,19 @@ export function Observe(pageOrComponent) {
      *    @CAUTION: 小程序的 setData, `data` 的 set 那个并没有触发 ( TODO: 它的原理 ), 所以不能直接监听 `data` 属性
      *
      */
+    const self = this
     Object.keys(this.data).forEach(key => {
       makePropertyObservableReference.call(this, key);
     });
+    extendStore.call(this)
     extendComputed.call(this);
     extendWatch.call(this);
     originOnLoad.apply(this, args);
     mobx.spy((event) => {
-      if (event.type === "update" && event.name === shopStore.$mobx.name ) {
-        console.log(event)
+      if (event.type === "update" && event.name === shopStore.$mobx.name) {
+        // self.setData({ [event.key]: event.newValue})
       }
     })
-    console.log(shopStore)
     setTimeout(() => {
       shopStore.currentRId = "1"
     }, 2000)
@@ -126,7 +182,9 @@ export function Observe(pageOrComponent) {
 
   function innerSetData(obj) {
     const self = this;
-    const { data } = self;
+    const {
+      data
+    } = self;
     Object.keys(obj).forEach(key => {
       if (!data.hasOwnProperty(key)) {
         // console.log( key, data[key],  data.hasOwnProperty(key) , mobx.isObservableObject(data[key]))
@@ -136,6 +194,7 @@ export function Observe(pageOrComponent) {
     self.setData(obj)
   }
   pageOrComponent.innerSetData = innerSetData;
+
   return pageOrComponent;
 }
 
@@ -163,8 +222,7 @@ function shallowEqual(objA, objB) {
   const keysB = Object.keys(objB);
   if (keysA.length !== keysB.length) return false;
   for (let i = 0; i < keysA.length; i++) {
-    if (
-      !hasOwnProperty.call(objB, keysA[i]) ||
+    if (!hasOwnProperty.call(objB, keysA[i]) ||
       !is(objA[keysA[i]], objB[keysA[i]])
     ) {
       return false;
@@ -174,8 +232,14 @@ function shallowEqual(objA, objB) {
 }
 /**
  *
- * @param {Store | Store[]} stores
+ * @param {{}} stores
  */
-function setProviders(stores) {}
+export default function setStores(stores) {
+  if (globalStores) {
+    // throw new Error("不允许动态修改 stores")
+  } else {
+    globalStores = stores
+  }
+}
 
 // module.exports = Observe
