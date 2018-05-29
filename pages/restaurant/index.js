@@ -8,7 +8,8 @@ Page({
   data: {
     clazzs: [],
     selectedIndex: -1,
-    selected: null
+    selected: null,
+    text: 2
   },
 
   /**

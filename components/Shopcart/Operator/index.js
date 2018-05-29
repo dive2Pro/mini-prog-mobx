@@ -20,6 +20,10 @@ Component(
           this._onPropertyChange(null, newVal)
         },
       },
+      text: {
+        type: String,
+        value: 'qwe'
+      }
     },
 
     /**
@@ -58,6 +62,16 @@ Component(
           });
         });
       },
+      
+    },
+    computed: {
+      rId() {
+        return this.$shopStore.currentRId;
+      },
+      someRId() {
+        console.log(this)
+        return "asd" + this.data.text
+      }
     },
     ready() {},
   }, "shopStore"));

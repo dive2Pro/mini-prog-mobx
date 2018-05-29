@@ -208,6 +208,7 @@ export function Observe(pageOrComponent, ...stores) {
      *
      */
     const self = this
+    self.innerSetData = innerSetData;    
     Object.keys(this.data).forEach(key => {
       makePropertyObservableReference.call(this, 'data' ,key);
     });
@@ -224,13 +225,16 @@ export function Observe(pageOrComponent, ...stores) {
   }
   function attached(...args) {
     const self = this
+    self.innerSetData = innerSetData;
     extendProperties.call(self)
     extendToObserve.call(self)
-    originOnAttached.apply(self, args)
+    originOnAttached && originOnAttached.apply(self, args)
   }
+  
   const originSetData = pageOrComponent.setData;
   pageOrComponent.onLoad = onLoad;
   pageOrComponent.attached = attached
+
   function innerSetData(obj) {
     const self = this;
     const {
@@ -243,7 +247,6 @@ export function Observe(pageOrComponent, ...stores) {
     });
     self.setData(obj)
   }
-  pageOrComponent.innerSetData = innerSetData;
   pageOrComponent.onUnload = onUnload;
   return pageOrComponent;
 }

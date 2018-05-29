@@ -1,6 +1,7 @@
 <!--components/Shopcart/Operator/index.wxml-->
 <view>
     <button bindtap="minus" hover-class="defaultTap">-</button>
-    <text>{{count}} </text>
+    <text>{{count}} - {{rId}} </text>
+    <text>{{someRId}}</text>
     <button bindtap="plus" hover-class="defaultTap">+</button>
 </view>

@@ -15,7 +15,7 @@
                  <text>{{item.name}} </text>
                 </view>
                 <view>
-                  <shop-cart-operator rId="{{id}}" food="{{item}}"/>
+                  <shop-cart-operator rId="{{id}}" food="{{item}}" text="{{text}}"/>
                 </view>
             </view>
         </view>
